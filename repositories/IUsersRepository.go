@@ -43,13 +43,21 @@ func (tr UserRepository) GetTasks() ([]entities.Users, error) {
 	return users, nil
 }
 
-func (tr UserRepository) CreateTask(newUser entities.Users) (entities.Users, error) {
-	// Define la consulta SQL para insertar una nueva tarea con columnas opcionales
-	query := "INSERT INTO users (Title, Content) VALUES (?, ?)"
-	_, err := tr.DB.Exec(query, newUser.Username, newUser.Password)
+// UserRepository
+func (tr UserRepository) CreateUser(newUser entities.Users) (entities.Users, error) {
+	// Define la consulta SQL para insertar un nuevo usuario
+	query := "INSERT INTO users (first_name, last_name, username, email, password) VALUES ($1, $2, $3, $4, $5)"
+
+	result, err := tr.DB.Exec(query, newUser.FirstName, newUser.LastName, newUser.Username, newUser.Email, newUser.Password)
 	if err != nil {
 		return entities.Users{}, err
 	}
+
+	// Obtén el ID del usuario creado
+	userID, _ := result.LastInsertId()
+
+	// Asigna el ID al usuario creado
+	newUser.ID = int(userID)
 
 	return newUser, nil
 }

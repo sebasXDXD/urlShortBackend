@@ -1,12 +1,14 @@
 package services
 
 import (
+	"urlShortenerBack/auth"
 	"urlShortenerBack/entities"
 	"urlShortenerBack/repositories"
 )
 
 type UserService struct {
 	UserRepository repositories.UserRepository
+	AuthService    auth.AuthService
 }
 
 func NewUserService(userRepo repositories.UserRepository) UserService {
@@ -24,9 +26,18 @@ func (ts UserService) GetTasks() ([]entities.Users, error) {
 	return tasks, nil
 }
 
-func (ts UserService) CreateTask(newTask entities.Users) (entities.Users, error) {
-	// Llama al método CreateTask del repositorio y pasa la nueva tarea
-	createdUser, err := ts.UserRepository.CreateTask(newTask)
+func (us UserService) CreateUser(newUser entities.Users) (entities.Users, error) {
+	// Hashear la contraseña del nuevo usuario
+	hashedPassword, err := us.AuthService.HashPassword(newUser.Password)
+	if err != nil {
+		return entities.Users{}, err
+	}
+
+	// Actualizar la contraseña con la versión hasheada
+	newUser.Password = hashedPassword
+
+	// Llamar al método CreateUser del repositorio y pasar la nueva tarea
+	createdUser, err := us.UserRepository.CreateUser(newUser)
 	if err != nil {
 		return entities.Users{}, err
 	}

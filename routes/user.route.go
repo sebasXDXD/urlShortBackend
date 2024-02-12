@@ -14,6 +14,6 @@ func SetupRoutes(userService services.UserService) *mux.Router {
 	//ruta para traer tareas
 	r.HandleFunc("/users", userController.Index).Methods(http.MethodGet)
 	// ruta para agregar tareas
-	r.HandleFunc("/tasks", userController.Create).Methods(http.MethodPost)
+	r.HandleFunc("/user", userController.Create).Methods(http.MethodPost)
 	return r
 }
