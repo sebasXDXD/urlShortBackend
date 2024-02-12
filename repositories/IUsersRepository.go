@@ -42,6 +42,28 @@ func (tr UserRepository) GetTasks() ([]entities.Users, error) {
 
 	return users, nil
 }
+func (tr UserRepository) GetUserByUsername(username string) (*entities.Users, error) {
+	query := "SELECT id, username, password, email, created_at, updated_at FROM users WHERE username = $1"
+	row := tr.DB.QueryRow(query, username)
+
+	user := entities.Users{}
+	updatedAtNull := sql.NullTime{}
+	createdAtNull := sql.NullTime{}
+
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Email, &createdAtNull, &updatedAtNull)
+	if err == sql.ErrNoRows {
+		// No se encontró ningún usuario con ese nombre de usuario
+		return nil, nil
+	} else if err != nil {
+		// Otro error, devolverlo
+		return nil, err
+	}
+
+	user.CreatedAt = createdAtNull.Time
+	user.UpdatedAt = updatedAtNull.Time
+
+	return &user, nil
+}
 
 // UserRepository
 func (tr UserRepository) CreateUser(newUser entities.Users) (entities.Users, error) {

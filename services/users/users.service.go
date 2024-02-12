@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"urlShortenerBack/auth"
 	"urlShortenerBack/entities"
 	"urlShortenerBack/repositories"
@@ -43,4 +44,28 @@ func (us UserService) CreateUser(newUser entities.Users) (entities.Users, error)
 	}
 
 	return createdUser, nil
+}
+func (us UserService) Login(inputUser entities.Users) (*entities.Users, error) {
+	// Buscar el usuario por su nombre de usuario en el repositorio
+	existingUser, err := us.UserRepository.GetUserByUsername(inputUser.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verificar si el usuario existe
+	if existingUser == nil {
+		// El usuario no existe, puedes devolver un error o un mensaje adecuado
+		return nil, errors.New("El usuario no existe")
+	}
+
+	// Hashear la contraseña proporcionada para compararla con la contraseña almacenada
+	err = us.AuthService.ComparePasswords(existingUser.Password, inputUser.Password)
+	if err != nil {
+		// Las contraseñas no coinciden
+		return nil, errors.New("Contraseña incorrecta")
+	}
+
+	// Continuar con el flujo de inicio de sesión si todo está correcto
+	// Puedes devolver el usuario autenticado o la información necesaria
+	return existingUser, nil
 }
