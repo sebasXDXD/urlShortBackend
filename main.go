@@ -7,6 +7,8 @@ import (
 	"urlShortenerBack/repositories"
 	"urlShortenerBack/routes"
 	services "urlShortenerBack/services/users"
+
+	"github.com/gorilla/handlers"
 )
 
 func main() {
@@ -25,10 +27,16 @@ func main() {
 	// Configurar el enrutador (router)
 	router := routes.SetupRoutes(userService)
 
-	// Aquí puedes agregar manejadores para diferentes rutas usando router.HandleFunc
+	// Configurar los encabezados CORS usando gorilla/handlers
+	headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
+	origins := handlers.AllowedOrigins([]string{"*"}) // Puedes ajustar esto según tus necesidades
+
+	// Utilizar el middleware para manejar CORS
+	handler := handlers.CORS(headers, methods, origins)(router)
 
 	// Iniciar el servidor en el puerto 8000
-	err = http.ListenAndServe(":8000", router)
+	err = http.ListenAndServe(":8000", handler)
 	if err != nil {
 		fmt.Println("Error al iniciar el servidor:", err)
 	}
