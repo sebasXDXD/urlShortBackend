@@ -1,7 +1,7 @@
 # Archivos binarios generados
 /bin/
 /pkg/
-postgres/
+/postgres/
 # Dependencias específicas de Go
 /vendor/
 /go.sum
