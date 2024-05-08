@@ -1,0 +1,9 @@
+# Archivos binarios generados
+/bin/
+/pkg/
+postgres/
+# Dependencias específicas de Go
+/vendor/
+/go.sum
+/go.mod
+go*.linux-amd64.tar.gz
