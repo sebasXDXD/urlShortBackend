@@ -13,7 +13,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return UserRepository{DB: db}
 }
 
-func (tr UserRepository) GetTasks() ([]entities.Users, error) {
+func (tr UserRepository) GetUsers() ([]entities.Users, error) {
 	query := "SELECT id, username, password,email, created_at, updated_at FROM users"
 	rows, err := tr.DB.Query(query)
 	if err != nil {

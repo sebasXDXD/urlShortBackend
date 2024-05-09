@@ -19,7 +19,7 @@ func NewUserController(userService services.UserService) UserController {
 
 func (c UserController) Index(w http.ResponseWriter, r *http.Request) {
 	// Llamar al método GetTask() del servicio
-	users, err := c.UserService.GetTasks()
+	users, err := c.UserService.GetUsers()
 	if err != nil {
 		// Manejar el error si lo hubiera, pero no devolver un error HTTP aquí.
 		http.Error(w, err.Error(), http.StatusInternalServerError)

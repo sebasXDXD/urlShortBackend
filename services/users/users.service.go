@@ -17,9 +17,9 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 	return UserService{UserRepository: userRepo}
 }
 
-func (ts UserService) GetTasks() ([]entities.Users, error) {
+func (ts UserService) GetUsers() ([]entities.Users, error) {
 
-	tasks, err := ts.UserRepository.GetTasks()
+	tasks, err := ts.UserRepository.GetUsers()
 	if err != nil {
 		return nil, err
 	}

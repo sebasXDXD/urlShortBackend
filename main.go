@@ -6,6 +6,7 @@ import (
 	"urlShortenerBack/db"
 	"urlShortenerBack/repositories"
 	"urlShortenerBack/routes"
+	serviceslinks "urlShortenerBack/services/links"
 	services "urlShortenerBack/services/users"
 
 	"github.com/gorilla/handlers"
@@ -20,12 +21,13 @@ func main() {
 		return
 	}
 
+	linkService := serviceslinks.NewLinkService(repositories.NewLinkRepository(dbInstance))
 	userService := services.NewUserService(repositories.NewUserRepository(dbInstance))
 
 	fmt.Println("Servidor escuchando en el puerto 8000...")
 
 	// Configurar el enrutador (router)
-	router := routes.SetupRoutes(userService)
+	router := routes.SetupRoutes(userService, linkService)
 
 	// Configurar los encabezados CORS usando gorilla/handlers
 	headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
