@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
+	"urlShortenerBack/utils"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
@@ -28,7 +30,7 @@ func (as *AuthService) ComparePasswords(hashedPassword, inputPassword string) er
 
 func (as *AuthService) AssignToken(userID int, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       userID,
+		"userID":   userID,
 		"username": username,
 	})
 
@@ -41,6 +43,10 @@ func (as *AuthService) AssignToken(userID int, username string) (string, error) 
 }
 
 // Middleware de autenticación
+type contextKey string
+
+const userIDKey = contextKey("userID")
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Obtener el token de la solicitud
@@ -58,12 +64,20 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 		jwtToken := parts[1]
 
+		// Depuración: imprimir el token
+		fmt.Printf("Token recibido: %s\n", jwtToken)
+
 		// Verificar la validez del token
 		token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-			// Aquí debes usar la misma clave secreta utilizada para firmar el token
 			return []byte(SecretWord), nil
 		})
-		if err != nil || !token.Valid {
+		if err != nil {
+			fmt.Printf("Error al parsear el token: %v\n", err)
+			http.Error(w, "Token inválido", http.StatusUnauthorized)
+			return
+		}
+		if !token.Valid {
+			fmt.Println("Token no es válido")
 			http.Error(w, "Token inválido", http.StatusUnauthorized)
 			return
 		}
@@ -71,15 +85,30 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// Extraer los datos del token
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
+			fmt.Println("No se pudieron obtener los datos del token")
 			http.Error(w, "No se pudieron obtener los datos del token", http.StatusUnauthorized)
 			return
 		}
-		type contextKey string
-		var userIDKey = contextKey("userID")
-		ctx := context.WithValue(r.Context(), userIDKey, claims["id"])
+
+		// Depuración: imprimir los claims del token
+		fmt.Printf("Claims del token: %+v\n", claims)
+
+		// Verificar si el claim "id" está presente
+		userID, ok := claims["userID"].(float64) // JWT claims are typically float64
+		if !ok {
+			fmt.Println("Claim 'userID' no está presente en el token")
+			http.Error(w, "Token inválido", http.StatusUnauthorized)
+			return
+		}
+
+		// Depuración: imprimir el userID
+		fmt.Printf("ID de usuario extraído del token: %v\n", userID)
+
+		// Agregar el userID al contexto de la solicitud
+		ctx := context.WithValue(r.Context(), utils.UserIDKey, userID)
 		r = r.WithContext(ctx)
 
-		// Si el token es válido, continuamos con la solicitud
+		// Continuar con la solicitud
 		next.ServeHTTP(w, r)
 	})
 }
