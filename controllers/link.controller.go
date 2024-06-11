@@ -48,9 +48,6 @@ func (c LinkController) Create(w http.ResponseWriter, r *http.Request) {
 	// Obtener el "id" del contexto
 	userID := r.Context().Value(utils.UserIDKey)
 
-	// Debug: imprimir el valor de userID y su tipo
-	fmt.Printf("Valor de userID en el contexto: %v, tipo: %T\n", userID, userID)
-
 	if userID == nil {
 		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
 		return
@@ -64,9 +61,6 @@ func (c LinkController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userIDInt := int(userIDFloat)
-
-	// Debug: imprimir el valor convertido de userIDInt
-	fmt.Printf("ID de usuario convertido: %d\n", userIDInt)
 
 	// Copiar el cuerpo de la solicitud
 	var buf bytes.Buffer
