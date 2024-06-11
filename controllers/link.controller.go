@@ -9,6 +9,8 @@ import (
 	"urlShortenerBack/entities"
 	services "urlShortenerBack/services/links"
 	"urlShortenerBack/utils"
+
+	"github.com/gorilla/mux"
 )
 
 type LinkController struct {
@@ -29,7 +31,19 @@ func (c LinkController) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(links)
 }
+func (c *LinkController) GetLink(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	linkID := vars["link"]
 
+	link, err := c.LinkService.GetLinkByString(linkID)
+	if err != nil {
+		http.Error(w, "Link not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(link)
+}
 func (c LinkController) Create(w http.ResponseWriter, r *http.Request) {
 	// Obtener el "id" del contexto
 	userID := r.Context().Value(utils.UserIDKey)

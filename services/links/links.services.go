@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"urlShortenerBack/auth"
 	"urlShortenerBack/entities"
 	"urlShortenerBack/repositories"
@@ -24,12 +25,23 @@ func (ls LinkService) GetLinks() ([]entities.Link, error) {
 }
 
 func (ls LinkService) CreateLink(newLink entities.Link) (entities.Link, error) {
-
-	// Llamar al método CreateLink del repositorio y pasar el nuevo enlace
 	createdLink, err := ls.LinkRepository.CreateLink(newLink)
 	if err != nil {
 		return entities.Link{}, err
 	}
-
 	return createdLink, nil
+}
+
+func (ls LinkService) GetLinkByString(name string) (entities.Link, error) {
+	link, err := ls.LinkRepository.GetLinkByString(name)
+	if err != nil {
+		return entities.Link{}, err
+	}
+
+	// Verificar si redirectTo es vacío
+	if link.RedirectTo == "" {
+		return entities.Link{}, errors.New("RedirectTo is empty")
+	}
+
+	return link, nil
 }

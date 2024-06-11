@@ -33,7 +33,6 @@ func (lr LinkRepository) GetLinks() ([]entities.Link, error) {
 		link.CreatedAt = createdAtNull.Time
 		link.UpdatedAt = updatedAtNull.Time
 		links = append(links, link)
-
 	}
 
 	if err := rows.Err(); err != nil {
@@ -44,7 +43,6 @@ func (lr LinkRepository) GetLinks() ([]entities.Link, error) {
 }
 
 func (lr LinkRepository) CreateLink(newLink entities.Link) (entities.Link, error) {
-	// Define la consulta SQL para insertar un nuevo enlace
 	query := "INSERT INTO links (name, redirect_to, user_created_id) VALUES ($1, $2, $3)"
 
 	result, err := lr.DB.Exec(query, newLink.Name, newLink.RedirectTo, newLink.UserCreatedID)
@@ -52,13 +50,28 @@ func (lr LinkRepository) CreateLink(newLink entities.Link) (entities.Link, error
 		return entities.Link{}, err
 	}
 
-	// Obtén el ID del enlace creado
 	linkID, _ := result.LastInsertId()
-
-	// Asigna el ID al enlace creado
 	newLink.ID = int(linkID)
 
 	return newLink, nil
 }
 
-// Otras funciones de repositorio específicas para la entidad Link, como GetUserByUsername, etc.
+// Método para obtener un enlace por su nombre
+func (lr LinkRepository) GetLinkByString(name string) (entities.Link, error) {
+	query := "SELECT id, name, redirect_to, user_created_id, created_at, updated_at FROM links WHERE name = $1 AND is_deleted = false"
+	row := lr.DB.QueryRow(query, name)
+
+	link := entities.Link{}
+	updatedAtNull := sql.NullTime{}
+	createdAtNull := sql.NullTime{}
+	err := row.Scan(&link.ID, &link.Name, &link.RedirectTo, &link.UserCreatedID, &createdAtNull, &updatedAtNull)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return link, nil
+		}
+		return link, err
+	}
+	link.CreatedAt = createdAtNull.Time
+	link.UpdatedAt = updatedAtNull.Time
+	return link, nil
+}

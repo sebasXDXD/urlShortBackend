@@ -32,15 +32,11 @@ func setupUserRoutes(r *mux.Router, userService userService.UserService) {
 }
 
 // setupLinkRoutes configura las rutas relacionadas con enlaces.
-// setupLinkRoutes configura las rutas relacionadas con enlaces.
 func setupLinkRoutes(r *mux.Router, linkService linksService.LinkService) {
 	linkController := controllers.NewLinkController(linkService)
 
-	// Crear un http.HandlerFunc a partir de linkController.Create
 	createLinkHandler := http.HandlerFunc(linkController.Create)
-
-	// Aplicar el middleware a la ruta de creación de enlaces
 	r.Handle("/link", auth.AuthMiddleware(createLinkHandler)).Methods(http.MethodPost)
 	r.HandleFunc("/links", linkController.Index).Methods(http.MethodGet)
-	// Agregar más rutas para enlaces según sea necesario
+	r.HandleFunc("/link/{link}", linkController.GetLink).Methods(http.MethodGet)
 }
