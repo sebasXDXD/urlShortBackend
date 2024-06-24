@@ -30,6 +30,7 @@ func setupUserRoutes(r *mux.Router, userService userService.UserService) {
 	r.HandleFunc("/user", userController.Create).Methods(http.MethodPost)
 	r.HandleFunc("/googleUser", userController.CreateGoogleUser).Methods(http.MethodPost)
 	r.HandleFunc("/login", userController.Login).Methods(http.MethodPost)
+	r.HandleFunc("/loginGoogle", userController.LoginGoogle).Methods(http.MethodPost)
 }
 
 // setupLinkRoutes configura las rutas relacionadas con enlaces.

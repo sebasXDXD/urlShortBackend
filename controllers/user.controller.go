@@ -160,3 +160,57 @@ func (c UserController) Login(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(response)
 }
+func (c UserController) LoginGoogle(w http.ResponseWriter, r *http.Request) {
+	// Copiar el cuerpo de la solicitud
+	var buf bytes.Buffer
+	tee := io.TeeReader(r.Body, &buf)
+
+	// Imprimir el contenido del cuerpo de la solicitud antes de decodificar
+	body, err := io.ReadAll(tee)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Restaurar el cuerpo de la solicitud para que pueda ser leído nuevamente más adelante
+	r.Body = io.NopCloser(&buf)
+
+	// Verificar si el cuerpo de la solicitud contiene tanto username como google_id
+	var user entities.Users
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Validar que tanto username como google_id están presentes
+	if user.Username == "" || user.GoogleID == "" {
+		http.Error(w, "Se requieren tanto username como google_id en la solicitud", http.StatusBadRequest)
+		return
+	}
+
+	// Llamar al método LoginGoogle() para ejecutar todo lo referente al login de usuario con Google
+	userLoged, err := c.UserService.LoginGoogle(user)
+	if err != nil {
+		// Manejar el error si lo hubiera, pero no devolver un error HTTP aquí.
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Asignar un token al usuario autenticado
+	token, err := c.UserService.AuthService.AssignToken(userLoged.ID, userLoged.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Responder al cliente con el usuario recién autenticado en formato JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	// Crear un mapa para combinar el usuario y el token
+	response := map[string]interface{}{
+		"user":  userLoged,
+		"token": token,
+	}
+
+	json.NewEncoder(w).Encode(response)
+}

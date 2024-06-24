@@ -94,3 +94,17 @@ func (us UserService) Login(inputUser entities.Users) (*entities.Users, error) {
 	// Puedes devolver el usuario autenticado o la información necesaria
 	return existingUser, nil
 }
+func (us UserService) LoginGoogle(inputUser entities.Users) (*entities.Users, error) {
+	// Buscar el usuario por su nombre de usuario en el repositorio
+	existingUser, err := us.UserRepository.GetUserByUsername(inputUser.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verificar si el usuario existe
+	if existingUser == nil {
+		// El usuario no existe, puedes devolver un error o un mensaje adecuado
+		return nil, errors.New("El usuario no existe")
+	}
+	return existingUser, nil
+}
