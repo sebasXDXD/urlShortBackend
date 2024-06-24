@@ -68,9 +68,9 @@ func (tr UserRepository) GetUserByUsername(username string) (*entities.Users, er
 // UserRepository
 func (tr UserRepository) CreateUser(newUser entities.Users) (entities.Users, error) {
 	// Define la consulta SQL para insertar un nuevo usuario
-	query := "INSERT INTO users (first_name, last_name, username, email, password) VALUES ($1, $2, $3, $4, $5)"
+	query := "INSERT INTO users (first_name, last_name, username, email, google_id, password) VALUES ($1, $2, $3, $4, $5, $6)"
 
-	result, err := tr.DB.Exec(query, newUser.FirstName, newUser.LastName, newUser.Username, newUser.Email, newUser.Password)
+	result, err := tr.DB.Exec(query, newUser.FirstName, newUser.LastName, newUser.Username, newUser.Email, newUser.GoogleID, newUser.Password)
 	if err != nil {
 		return entities.Users{}, err
 	}

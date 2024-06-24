@@ -15,9 +15,11 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE,
     email VARCHAR(100) UNIQUE,
     password VARCHAR(255),
+    google_id VARCHAR(255) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Crear el trigger para llamar a la función antes de una actualización en users
 CREATE TRIGGER users_update_updated_at

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/idtoken"
 )
 
 // AuthService maneja la lógica de autenticación
@@ -111,4 +113,21 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// Continuar con la solicitud
 		next.ServeHTTP(w, r)
 	})
+}
+
+// metodo para validadr el id token de google
+func (as AuthService) ValidateGoogleID(ctx context.Context, googleIDToken string) (bool, error) {
+	// Tu CLIENT_ID de Google
+	clientID := "MyGoogleClientID"
+
+	// Verificar el ID token
+	payload, err := idtoken.Validate(ctx, googleIDToken, clientID)
+	if err != nil {
+		return false, err
+	}
+	if payload == nil {
+		return false, errors.New("token de Google no válido")
+	}
+
+	return true, nil
 }

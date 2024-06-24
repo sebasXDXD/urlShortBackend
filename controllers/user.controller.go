@@ -65,7 +65,49 @@ func (c UserController) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdUser)
 }
+func (c UserController) CreateGoogleUser(w http.ResponseWriter, r *http.Request) {
+	// Copiar el cuerpo de la solicitud
+	var buf bytes.Buffer
+	tee := io.TeeReader(r.Body, &buf)
 
+	// Imprimir el contenido del cuerpo de la solicitud antes de decodificar
+	body, err := io.ReadAll(tee)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Restaurar el cuerpo de la solicitud para que pueda ser leído nuevamente más adelante
+	r.Body = io.NopCloser(&buf)
+
+	// Decodificar los datos del cliente (puede variar según el formato que esperes)
+	var newUser entities.Users
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&newUser); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Obtener el token de Google de la solicitud (puede estar en los encabezados o en el cuerpo de la solicitud)
+	// googleIDToken := r.Header.Get("Google-ID-Token")
+	// fmt.Printf("Google ID Token: %s\n", googleIDToken)
+	// if googleIDToken == "" {
+	// 	http.Error(w, "Falta el token de Google", http.StatusBadRequest)
+	// 	return
+	// }
+
+	// Llamar al método CreateGoogleUser() del servicio para agregar el nuevo usuario
+	createdUser, err := c.UserService.CreateGoogleUser(r.Context(), newUser)
+	if err != nil {
+		// Manejar el error si lo hubiera
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Responder al cliente con el usuario recién creado en formato JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdUser)
+}
 func (c UserController) Login(w http.ResponseWriter, r *http.Request) {
 	// Copiar el cuerpo de la solicitud
 	var buf bytes.Buffer

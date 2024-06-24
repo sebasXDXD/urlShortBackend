@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"urlShortenerBack/auth"
 	"urlShortenerBack/entities"
@@ -38,6 +39,30 @@ func (us UserService) CreateUser(newUser entities.Users) (entities.Users, error)
 	newUser.Password = hashedPassword
 
 	// Llamar al método CreateUser del repositorio y pasar la nueva tarea
+	createdUser, err := us.UserRepository.CreateUser(newUser)
+	if err != nil {
+		return entities.Users{}, err
+	}
+
+	return createdUser, nil
+}
+
+func (us UserService) CreateGoogleUser(ctx context.Context, newUser entities.Users) (entities.Users, error) {
+	// // Validar el google_id token del nuevo usuario
+	// isValid, err := us.AuthService.ValidateGoogleID(ctx, googleIDToken)
+	// if err != nil {
+	// 	return entities.Users{}, err
+	// }
+
+	// if !isValid {
+	// 	return entities.Users{}, errors.New("google_id token no es válido")
+	// }
+
+	// // Aquí no es necesario hashear la contraseña porque estamos creando un usuario de Google
+	// // Si quieres puedes establecer la contraseña como una cadena vacía
+	// newUser.Password = ""
+
+	// // Llamar al método CreateUser del repositorio y pasar la nueva tarea
 	createdUser, err := us.UserRepository.CreateUser(newUser)
 	if err != nil {
 		return entities.Users{}, err
