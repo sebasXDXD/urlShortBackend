@@ -44,6 +44,21 @@ func (c *LinkController) GetLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(link)
 }
+func (c *LinkController) Redirect(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	shortCode := vars["shortCode"] // Usamos el parámetro correcto
+
+	// Busca la URL original en la base de datos usando Name
+	link, err := c.LinkService.GetLinkByString(shortCode)
+	if err != nil {
+		http.Error(w, "Link not found", http.StatusNotFound)
+		return
+	}
+
+	// Redirige a la URL original
+	http.Redirect(w, r, link.RedirectTo, http.StatusFound)
+}
+
 func (c LinkController) Create(w http.ResponseWriter, r *http.Request) {
 	// Obtener el "id" del contexto
 	userID := r.Context().Value(utils.UserIDKey)

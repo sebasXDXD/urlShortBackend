@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"urlShortenerBack/auth"
 	"urlShortenerBack/controllers"
 	linksService "urlShortenerBack/services/links"
 	userService "urlShortenerBack/services/users"
@@ -31,14 +30,4 @@ func setupUserRoutes(r *mux.Router, userService userService.UserService) {
 	r.HandleFunc("/googleUser", userController.CreateGoogleUser).Methods(http.MethodPost)
 	r.HandleFunc("/login", userController.Login).Methods(http.MethodPost)
 	r.HandleFunc("/loginGoogle", userController.LoginGoogle).Methods(http.MethodPost)
-}
-
-// setupLinkRoutes configura las rutas relacionadas con enlaces.
-func setupLinkRoutes(r *mux.Router, linkService linksService.LinkService) {
-	linkController := controllers.NewLinkController(linkService)
-
-	createLinkHandler := http.HandlerFunc(linkController.Create)
-	r.Handle("/link", auth.AuthMiddleware(createLinkHandler)).Methods(http.MethodPost)
-	r.HandleFunc("/links", linkController.Index).Methods(http.MethodGet)
-	r.HandleFunc("/link/{link}", linkController.GetLink).Methods(http.MethodGet)
 }
