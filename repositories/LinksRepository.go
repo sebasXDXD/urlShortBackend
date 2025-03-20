@@ -75,3 +75,27 @@ func (lr LinkRepository) GetLinkByString(name string) (entities.Link, error) {
 	link.UpdatedAt = updatedAtNull.Time
 	return link, nil
 }
+func (lr LinkRepository) GetLinkByID(id int) (entities.Link, error) {
+	query := "SELECT id, name, redirect_to, user_created_id, created_at, updated_at FROM links WHERE id = $1 AND is_deleted = false"
+	row := lr.DB.QueryRow(query, id)
+
+	link := entities.Link{}
+	updatedAtNull := sql.NullTime{}
+	createdAtNull := sql.NullTime{}
+	err := row.Scan(&link.ID, &link.Name, &link.RedirectTo, &link.UserCreatedID, &createdAtNull, &updatedAtNull)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return link, nil
+		}
+		return link, err
+	}
+	link.CreatedAt = createdAtNull.Time
+	link.UpdatedAt = updatedAtNull.Time
+	return link, nil
+}
+
+func (lr LinkRepository) UpdateLink(linkID int, name string, redirectTo string) error {
+	query := "UPDATE links SET name = $1, redirect_to = $2, updated_at = NOW() WHERE id = $3 AND is_deleted = false"
+	_, err := lr.DB.Exec(query, name, redirectTo, linkID)
+	return err
+}

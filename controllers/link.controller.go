@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"urlShortenerBack/entities"
 	services "urlShortenerBack/services/links"
 	"urlShortenerBack/utils"
@@ -109,7 +110,123 @@ func (c LinkController) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Responder al cliente con el enlace recién creado en formato JSON
+	response := map[string]interface{}{
+		"message": "Enlace creado exitosamente",
+		"link":    createdLink,
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdLink)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (c LinkController) GetByID(w http.ResponseWriter, r *http.Request) {
+	// Obtener el ID del enlace desde los parámetros de la URL
+	vars := mux.Vars(r)
+	idStr, exists := vars["id"]
+	if !exists {
+		http.Error(w, "ID no proporcionado", http.StatusBadRequest)
+		return
+	}
+
+	// Convertir el ID a entero
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	// Obtener el enlace desde el repositorio
+	link, err := c.LinkService.GetLinkByID(id)
+	if err != nil {
+		http.Error(w, "Error al obtener el enlace", http.StatusInternalServerError)
+		return
+	}
+
+	if link.ID == 0 {
+		http.Error(w, "Enlace no encontrado", http.StatusNotFound)
+		return
+	}
+
+	// Responder con el enlace en formato JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(link)
+}
+
+func (c LinkController) Update(w http.ResponseWriter, r *http.Request) {
+	// Obtener el "id" del contexto
+	userID := r.Context().Value(utils.UserIDKey)
+
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+
+	// Asegurar que userID es del tipo correcto (float64)
+	userIDFloat, ok := userID.(float64)
+	if !ok {
+		http.Error(w, "Tipo de usuario no válido", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userIDFloat)
+
+	// Obtener el ID del enlace desde los parámetros de la URL
+	vars := mux.Vars(r)
+	idStr, exists := vars["id"]
+	if !exists {
+		http.Error(w, "ID no proporcionado", http.StatusBadRequest)
+		return
+	}
+
+	// Convertir el ID a entero
+	linkID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	// Decodificar el cuerpo de la solicitud
+	var updateData struct {
+		Name       string `json:"name"`
+		RedirectTo string `json:"redirect_to"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+		http.Error(w, "Formato JSON inválido", http.StatusBadRequest)
+		return
+	}
+
+	// Validar que los campos no estén vacíos
+	if updateData.Name == "" || updateData.RedirectTo == "" {
+		http.Error(w, "Nombre y URL son obligatorios", http.StatusBadRequest)
+		return
+	}
+
+	// Obtener el enlace actual
+	link, err := c.LinkService.GetLinkByID(linkID)
+	if err != nil {
+		http.Error(w, "Error al obtener el enlace", http.StatusInternalServerError)
+		return
+	}
+
+	if link.ID == 0 {
+		http.Error(w, "Enlace no encontrado", http.StatusNotFound)
+		return
+	}
+
+	// Verificar que el usuario autenticado es el creador del enlace
+	if link.UserCreatedID != userIDInt {
+		http.Error(w, "No tienes permisos para modificar este enlace", http.StatusForbidden)
+		return
+	}
+
+	// Actualizar el enlace
+	err = c.LinkService.UpdateLink(linkID, updateData.Name, updateData.RedirectTo)
+	if err != nil {
+		http.Error(w, "Error al actualizar el enlace", http.StatusInternalServerError)
+		return
+	}
+
+	// Responder con éxito
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Enlace actualizado correctamente"})
 }

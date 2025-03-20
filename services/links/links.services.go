@@ -45,3 +45,15 @@ func (ls LinkService) GetLinkByString(name string) (entities.Link, error) {
 
 	return link, nil
 }
+
+func (ls LinkService) GetLinkByID(id int) (entities.Link, error) {
+	link, err := ls.LinkRepository.GetLinkByID(id)
+	if err != nil {
+		return entities.Link{}, err
+	}
+	return link, nil
+}
+
+func (ls LinkService) UpdateLink(linkID int, name string, redirectTo string) error {
+	return ls.LinkRepository.UpdateLink(linkID, name, redirectTo)
+}
