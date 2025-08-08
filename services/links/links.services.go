@@ -57,3 +57,6 @@ func (ls LinkService) GetLinkByID(id int) (entities.Link, error) {
 func (ls LinkService) UpdateLink(linkID int, name string, redirectTo string) error {
 	return ls.LinkRepository.UpdateLink(linkID, name, redirectTo)
 }
+func (ls LinkService) GetStatsByUserID(userID int) (entities.LinkStats, error) {
+	return ls.LinkRepository.GetStatsByUserID(userID)
+}

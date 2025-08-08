@@ -3,9 +3,13 @@ package services
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strings"
 	"urlShortenerBack/auth"
 	"urlShortenerBack/entities"
 	"urlShortenerBack/repositories"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type UserService struct {
@@ -107,4 +111,48 @@ func (us UserService) LoginGoogle(inputUser entities.Users) (*entities.Users, er
 		return nil, errors.New("El usuario no existe")
 	}
 	return existingUser, nil
+}
+func (us UserService) GetUserIDFromRequest(r *http.Request) (int, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return 0, errors.New("Token de autorización faltante")
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return 0, errors.New("Formato de token inválido")
+	}
+	tokenString := parts[1]
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(auth.SecretWord), nil
+	})
+	if err != nil || !token.Valid {
+		return 0, errors.New("Token inválido")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, errors.New("No se pudieron leer los claims del token")
+	}
+
+	// Obtener el userID como float64 y convertirlo a int
+	userIDFloat, ok := claims["userID"].(float64)
+	if !ok {
+		return 0, errors.New("El claim 'userID' no está presente o es inválido")
+	}
+	userID := int(userIDFloat)
+
+	return userID, nil
+}
+
+func (us UserService) GetByID(userID int) (*entities.Users, error) {
+	user, err := us.UserRepository.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("Usuario no encontrado")
+	}
+	return user, nil
 }

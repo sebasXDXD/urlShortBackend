@@ -5,6 +5,7 @@ import (
 	"urlShortenerBack/entities"
 )
 
+// UserRepository
 type UserRepository struct {
 	DB *sql.DB
 }
@@ -65,7 +66,6 @@ func (tr UserRepository) GetUserByUsername(username string) (*entities.Users, er
 	return &user, nil
 }
 
-// UserRepository
 func (tr UserRepository) CreateUser(newUser entities.Users) (entities.Users, error) {
 	// Define la consulta SQL para insertar un nuevo usuario
 	query := "INSERT INTO users (first_name, last_name, username, email, google_id, password) VALUES ($1, $2, $3, $4, $5, $6)"
@@ -82,4 +82,93 @@ func (tr UserRepository) CreateUser(newUser entities.Users) (entities.Users, err
 	newUser.ID = int(userID)
 
 	return newUser, nil
+}
+
+func (tr UserRepository) GetUserProfileByID(userID int) (*entities.Users, error) {
+	query := `
+		SELECT id, first_name, last_name, username, email, company, country, phone, plan, created_at, updated_at, url_limit
+		FROM users 
+		WHERE id = $1
+	`
+
+	row := tr.DB.QueryRow(query, userID)
+
+	var user entities.Users
+	var createdAtNull, updatedAtNull sql.NullTime
+	var company, country, phone, plan sql.NullString
+	var urlLimit sql.NullInt64
+
+	err := row.Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Username,
+		&user.Email,
+		&company,
+		&country,
+		&phone,
+		&plan,
+		&createdAtNull,
+		&updatedAtNull,
+		&urlLimit,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Asignar campos nulos si existen
+	// user.Company = company.String
+	// user.Country = country.String
+	// user.Phone = phone.String
+	// user.Plan = plan.String
+	// user.URLLimit = int(urlLimit.Int64)
+	// user.CreatedAt = createdAtNull.Time
+	// user.UpdatedAt = updatedAtNull.Time
+
+	return &user, nil
+}
+func (tr UserRepository) GetByID(userID int) (*entities.Users, error) {
+	query := `
+		SELECT id, first_name, last_name, username, email, password, google_id, created_at, updated_at
+		FROM users 
+		WHERE id = $1
+	`
+
+	row := tr.DB.QueryRow(query, userID)
+
+	var user entities.Users
+	var createdAtNull, updatedAtNull sql.NullTime
+	var password, googleID sql.NullString
+
+	err := row.Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Username,
+		&user.Email,
+		&password,
+		&googleID,
+		&createdAtNull,
+		&updatedAtNull,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Asignar campos nulos con verificación
+	user.Password = password.String
+	user.GoogleID = googleID.String
+
+	if createdAtNull.Valid {
+		user.CreatedAt = createdAtNull.Time
+	}
+	if updatedAtNull.Valid {
+		user.UpdatedAt = updatedAtNull.Time
+	}
+
+	return &user, nil
 }

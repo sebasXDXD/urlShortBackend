@@ -30,4 +30,6 @@ func setupUserRoutes(r *mux.Router, userService userService.UserService) {
 	r.HandleFunc("/googleUser", userController.CreateGoogleUser).Methods(http.MethodPost)
 	r.HandleFunc("/login", userController.Login).Methods(http.MethodPost)
 	r.HandleFunc("/loginGoogle", userController.LoginGoogle).Methods(http.MethodPost)
+	r.HandleFunc("/fullProfile", userController.Profile).Methods(http.MethodGet)
+
 }

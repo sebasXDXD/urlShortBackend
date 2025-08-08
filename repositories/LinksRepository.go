@@ -99,3 +99,62 @@ func (lr LinkRepository) UpdateLink(linkID int, name string, redirectTo string) 
 	_, err := lr.DB.Exec(query, name, redirectTo, linkID)
 	return err
 }
+func (lr LinkRepository) GetStatsByUserID(userID int) (entities.LinkStats, error) {
+	stats := entities.LinkStats{}
+
+	// Total de links creados por el usuario
+	queryTotalLinks := `
+		SELECT COUNT(*) FROM links WHERE user_created_id = $1 AND is_deleted = false
+	`
+	err := lr.DB.QueryRow(queryTotalLinks, userID).Scan(&stats.TotalCreated)
+	if err != nil {
+		return stats, err
+	}
+
+	// Total de clics en todos sus links
+	queryTotalClicks := `
+		SELECT COUNT(*) 
+		FROM clicks 
+		WHERE link_id IN (SELECT id FROM links WHERE user_created_id = $1 AND is_deleted = false)
+	`
+	err = lr.DB.QueryRow(queryTotalClicks, userID).Scan(&stats.TotalClicks)
+	if err != nil {
+		return stats, err
+	}
+
+	// URL más popular
+	queryPopular := `
+		SELECT l.name, COUNT(*) as clicks 
+		FROM clicks c
+		JOIN links l ON c.link_id = l.id
+		WHERE l.user_created_id = $1 AND l.is_deleted = false
+		GROUP BY l.name
+		ORDER BY clicks DESC
+		LIMIT 1
+	`
+	err = lr.DB.QueryRow(queryPopular, userID).Scan(&stats.MostClickedURL, &stats.MostClickedCount)
+	if err == sql.ErrNoRows {
+		stats.MostClickedURL = ""
+		stats.MostClickedCount = 0
+	} else if err != nil {
+		return stats, err
+	}
+
+	// Último acceso (último click)
+	queryLastAccess := `
+		SELECT MAX(c.created_at)
+		FROM clicks c
+		JOIN links l ON c.link_id = l.id
+		WHERE l.user_created_id = $1 AND l.is_deleted = false
+	`
+	var lastAccess sql.NullTime
+	err = lr.DB.QueryRow(queryLastAccess, userID).Scan(&lastAccess)
+	if err != nil {
+		return stats, err
+	}
+	if lastAccess.Valid {
+		stats.LastAccess = lastAccess.Time
+	}
+
+	return stats, nil
+}

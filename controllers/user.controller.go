@@ -3,14 +3,18 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"urlShortenerBack/dtos"
 	"urlShortenerBack/entities"
+	linksServices "urlShortenerBack/services/links"
 	services "urlShortenerBack/services/users"
 )
 
 type UserController struct {
 	UserService services.UserService
+	LinkService linksServices.LinkService
 }
 
 func NewUserController(userService services.UserService) UserController {
@@ -18,7 +22,6 @@ func NewUserController(userService services.UserService) UserController {
 }
 
 func (c UserController) Index(w http.ResponseWriter, r *http.Request) {
-	// Llamar al método GetTask() del servicio
 	users, err := c.UserService.GetUsers()
 	if err != nil {
 		// Manejar el error si lo hubiera, pero no devolver un error HTTP aquí.
@@ -212,5 +215,50 @@ func (c UserController) LoginGoogle(w http.ResponseWriter, r *http.Request) {
 		"token": token,
 	}
 
+	json.NewEncoder(w).Encode(response)
+}
+
+func (uc *UserController) Profile(w http.ResponseWriter, r *http.Request) {
+	// 🔐 Extraer usuario desde el token o sesión (esto depende de tu auth)
+	userID, err := uc.UserService.GetUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Obtener datos del usuario
+	user, err := uc.UserService.GetByID(userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	stats, err := uc.LinkService.GetStatsByUserID(userID)
+	if err != nil {
+		http.Error(w, "Error getting stats", http.StatusInternalServerError)
+		return
+	}
+
+	// Estructura combinada
+	response := dtos.UserProfileResponse{
+		FullName: fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		Email:    user.Email,
+		// Company:  user.Company,
+		// Country:  user.Country,
+		// Phone:    user.Phone,
+		// Plan:     user.Plan,
+		JoinDate: user.CreatedAt,
+		Stats: dtos.StatsData{
+			URLsCreated: stats.TotalCreated,
+			// URLsLimit:        user.URLLimit,
+			TotalClicks:      stats.TotalClicks,
+			PopularURL:       stats.MostClickedURL,
+			PopularURLClicks: stats.MostClickedCount,
+			LastAccess:       stats.LastAccess.Format("02 Jan 2006 15:04"),
+		},
+	}
+
+	// Enviar respuesta
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
