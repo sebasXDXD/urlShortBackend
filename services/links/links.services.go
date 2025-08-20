@@ -46,6 +46,10 @@ func (ls LinkService) GetLinkByString(name string) (entities.Link, error) {
 	return link, nil
 }
 
+func (s *LinkService) RegisterClick(linkID int, ip, userAgent string) error {
+	return s.LinkRepository.RegisterClick(linkID, ip, userAgent)
+}
+
 func (ls LinkService) GetLinkByID(id int) (entities.Link, error) {
 	link, err := ls.LinkRepository.GetLinkByID(id)
 	if err != nil {

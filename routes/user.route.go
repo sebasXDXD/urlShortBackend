@@ -14,7 +14,7 @@ func SetupRoutes(userService userService.UserService, linkService linksService.L
 	r := mux.NewRouter()
 
 	// Configuración de rutas para usuarios
-	setupUserRoutes(r, userService)
+	setupUserRoutes(r, userService, linkService)
 
 	// Configuración de rutas para enlaces
 	setupLinkRoutes(r, linkService)
@@ -23,13 +23,12 @@ func SetupRoutes(userService userService.UserService, linkService linksService.L
 }
 
 // setupUserRoutes configura las rutas relacionadas con usuarios.
-func setupUserRoutes(r *mux.Router, userService userService.UserService) {
-	userController := controllers.NewUserController(userService)
+func setupUserRoutes(r *mux.Router, userService userService.UserService, linkService linksService.LinkService) {
+	userController := controllers.NewUserController(userService, linkService)
 	r.HandleFunc("/users", userController.Index).Methods(http.MethodGet)
 	r.HandleFunc("/user", userController.Create).Methods(http.MethodPost)
 	r.HandleFunc("/googleUser", userController.CreateGoogleUser).Methods(http.MethodPost)
 	r.HandleFunc("/login", userController.Login).Methods(http.MethodPost)
 	r.HandleFunc("/loginGoogle", userController.LoginGoogle).Methods(http.MethodPost)
 	r.HandleFunc("/fullProfile", userController.Profile).Methods(http.MethodGet)
-
 }

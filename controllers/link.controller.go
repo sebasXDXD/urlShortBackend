@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 	"urlShortenerBack/entities"
 	services "urlShortenerBack/services/links"
 	"urlShortenerBack/utils"
@@ -47,16 +48,32 @@ func (c *LinkController) GetLink(w http.ResponseWriter, r *http.Request) {
 }
 func (c *LinkController) Redirect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	shortCode := vars["shortCode"] // Usamos el parámetro correcto
+	shortCode := vars["shortCode"]
 
-	// Busca la URL original en la base de datos usando Name
+	// 📌 Imprimir shortCode en consola
+	fmt.Printf("[%s] ShortCode recibido: %s\n", time.Now().Format(time.RFC3339), shortCode)
+	fmt.Printf("ShortCode recibido: %s\n", shortCode)
+
+	// Busca la URL original
 	link, err := c.LinkService.GetLinkByString(shortCode)
 	if err != nil {
 		http.Error(w, "Link not found", http.StatusNotFound)
 		return
 	}
 
-	// Redirige a la URL original
+	// 📌 Obtener datos del visitante
+	ip := r.RemoteAddr
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		ip = forwarded
+	}
+	userAgent := r.UserAgent()
+
+	// 📌 Registrar el click (no detenemos la redirección si falla)
+	if err := c.LinkService.RegisterClick(link.ID, ip, userAgent); err != nil {
+		fmt.Printf("Error registrando click: %v\n", err)
+	}
+
+	// 📌 Redirigir a la URL original
 	http.Redirect(w, r, link.RedirectTo, http.StatusFound)
 }
 

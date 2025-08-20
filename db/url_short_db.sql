@@ -70,3 +70,12 @@ CREATE TRIGGER links_deleted_at_trigger
 BEFORE UPDATE ON links
 FOR EACH ROW
 EXECUTE FUNCTION update_links_deleted_at();
+
+-- Crear tabla de clicks
+CREATE TABLE clicks (
+    id SERIAL PRIMARY KEY,
+    link_id INT REFERENCES links(id) ON DELETE CASCADE,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -17,8 +17,11 @@ type UserController struct {
 	LinkService linksServices.LinkService
 }
 
-func NewUserController(userService services.UserService) UserController {
-	return UserController{UserService: userService}
+func NewUserController(userService services.UserService, linkService linksServices.LinkService) UserController {
+	return UserController{
+		UserService: userService,
+		LinkService: linkService,
+	}
 }
 
 func (c UserController) Index(w http.ResponseWriter, r *http.Request) {

@@ -99,6 +99,16 @@ func (lr LinkRepository) UpdateLink(linkID int, name string, redirectTo string) 
 	_, err := lr.DB.Exec(query, name, redirectTo, linkID)
 	return err
 }
+
+func (lr LinkRepository) RegisterClick(linkID int, ip, userAgent string) error {
+	query := `
+		INSERT INTO clicks (link_id, ip_address, user_agent) 
+		VALUES ($1, $2, $3)
+	`
+	_, err := lr.DB.Exec(query, linkID, ip, userAgent)
+	return err
+}
+
 func (lr LinkRepository) GetStatsByUserID(userID int) (entities.LinkStats, error) {
 	stats := entities.LinkStats{}
 
