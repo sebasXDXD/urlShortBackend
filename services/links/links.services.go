@@ -64,3 +64,21 @@ func (ls LinkService) UpdateLink(linkID int, name string, redirectTo string) err
 func (ls LinkService) GetStatsByUserID(userID int) (entities.LinkStats, error) {
 	return ls.LinkRepository.GetStatsByUserID(userID)
 }
+func (ls LinkService) GetClicksByMonth(userID, months int) ([]repositories.MonthCount, error) {
+	return ls.LinkRepository.GetClicksByMonth(userID, months)
+}
+
+// Top N enlaces por clicks
+func (ls LinkService) GetTopLinksByUser(userID, limit int) ([]repositories.LinkWithClicks, error) {
+	return ls.LinkRepository.GetTopLinksByUser(userID, limit)
+}
+
+// Links creados por mes (últimos N meses)
+func (ls LinkService) GetLinksCreatedByMonth(userID, months int) ([]repositories.MonthCount, error) {
+	return ls.LinkRepository.GetLinksCreatedByMonth(userID, months)
+}
+
+// Links recientes (últimos N)
+func (ls LinkService) GetRecentLinksByUser(userID, limit int) ([]entities.Link, error) {
+	return ls.LinkRepository.GetRecentLinksByUser(userID, limit)
+}

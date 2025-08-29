@@ -247,3 +247,127 @@ func (c LinkController) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Enlace actualizado correctamente"})
 }
+
+// Obtener estadísticas generales de un usuario
+func (c LinkController) GetStatsByUserID(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(utils.UserIDKey)
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+	userIDFloat, ok := userID.(float64)
+	if !ok {
+		http.Error(w, "Tipo de usuario no válido", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userIDFloat)
+
+	stats, err := c.LinkService.GetStatsByUserID(userIDInt)
+	if err != nil {
+		http.Error(w, "Error obteniendo estadísticas", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+// Obtener clicks por mes (últimos N meses)
+func (c LinkController) GetClicksByMonth(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(utils.UserIDKey)
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userID.(float64))
+
+	monthsStr := r.URL.Query().Get("months")
+	months, err := strconv.Atoi(monthsStr)
+	if err != nil || months <= 0 {
+		months = 6 // valor por defecto
+	}
+
+	clicks, err := c.LinkService.GetClicksByMonth(userIDInt, months)
+	if err != nil {
+		http.Error(w, "Error obteniendo clicks", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(clicks)
+}
+
+// Top N enlaces más clickeados
+func (c LinkController) GetTopLinksByUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(utils.UserIDKey)
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userID.(float64))
+
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 5 // valor por defecto
+	}
+
+	topLinks, err := c.LinkService.GetTopLinksByUser(userIDInt, limit)
+	if err != nil {
+		http.Error(w, "Error obteniendo top links", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(topLinks)
+}
+
+// Links creados por mes (últimos N meses)
+func (c LinkController) GetLinksCreatedByMonth(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(utils.UserIDKey)
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userID.(float64))
+
+	monthsStr := r.URL.Query().Get("months")
+	months, err := strconv.Atoi(monthsStr)
+	if err != nil || months <= 0 {
+		months = 6
+	}
+
+	links, err := c.LinkService.GetLinksCreatedByMonth(userIDInt, months)
+	if err != nil {
+		http.Error(w, "Error obteniendo links creados", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(links)
+}
+
+// Links recientes (últimos N creados por el usuario)
+func (c LinkController) GetRecentLinksByUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(utils.UserIDKey)
+	if userID == nil {
+		http.Error(w, "Usuario no autenticado", http.StatusUnauthorized)
+		return
+	}
+	userIDInt := int(userID.(float64))
+
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 5
+	}
+
+	recentLinks, err := c.LinkService.GetRecentLinksByUser(userIDInt, limit)
+	if err != nil {
+		http.Error(w, "Error obteniendo links recientes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recentLinks)
+}
