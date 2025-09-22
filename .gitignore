@@ -7,3 +7,4 @@
 /go.sum
 /go.mod
 go*.linux-amd64.tar.gz
+.env

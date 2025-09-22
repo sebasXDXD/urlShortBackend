@@ -3,24 +3,39 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
 func ConnectDb() (*sql.DB, error) {
-	// Cambiar la cadena de conexión y el controlador para PostgreSQL
-	dataSourceName := "user=sebas_cruds password=root dbname=url_short_db sslmode=disable"
+	// Obtener las variables de entorno
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+	sslmode := os.Getenv("DB_SSLMODE")
+
+	// Crear el string de conexión
+	dataSourceName := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode,
+	)
+
+	// Conectar
 	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
-		return nil, err // Devolvemos el error en lugar de usar log.Fatal
-	}
-
-	err = db.Ping()
-	if err != nil {
-		db.Close() // Cerramos la conexión antes de devolver el error
 		return nil, err
 	}
 
-	fmt.Println("Conexión a la base de datos PostgreSQL establecida exitosamente.")
+	// Probar conexión
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	fmt.Println("✅ Conexión a la base de datos PostgreSQL establecida exitosamente.")
 	return db, nil
 }

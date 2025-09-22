@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"urlShortenerBack/db"
 	"urlShortenerBack/repositories"
 	"urlShortenerBack/routes"
@@ -24,8 +25,6 @@ func main() {
 	linkService := serviceslinks.NewLinkService(repositories.NewLinkRepository(dbInstance))
 	userService := services.NewUserService(repositories.NewUserRepository(dbInstance))
 
-	fmt.Println("Servidor escuchando en el puerto 8000...")
-
 	// Configurar el enrutador (router)
 	router := routes.SetupRoutes(userService, linkService)
 
@@ -37,8 +36,17 @@ func main() {
 	// Utilizar el middleware para manejar CORS
 	handler := handlers.CORS(headers, methods, origins)(router)
 
-	// Iniciar el servidor en el puerto 8000
-	err = http.ListenAndServe(":8000", handler)
+	// Leer el puerto de la variable de entorno o usar 8000 por defecto
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+
+	fmt.Println("Servidor escuchando en el puerto " + port + "...")
+
+	// Iniciar el servidor
+	err = http.ListenAndServe(":"+port, handler)
+
 	if err != nil {
 		fmt.Println("Error al iniciar el servidor:", err)
 	}
