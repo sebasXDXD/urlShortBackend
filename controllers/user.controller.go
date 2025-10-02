@@ -37,83 +37,95 @@ func (c UserController) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c UserController) Create(w http.ResponseWriter, r *http.Request) {
-	// Copiar el cuerpo de la solicitud
-	var buf bytes.Buffer
-	tee := io.TeeReader(r.Body, &buf)
+	var newUser entities.Users
 
-	// Imprimir el contenido del cuerpo de la solicitud antes de decodificar
-	body, err := io.ReadAll(tee)
+	// Decodificar el JSON
+	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Buscar si ya existe por email
+	existingUser, err := c.UserService.GetUserByEmail(newUser.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Restaurar el cuerpo de la solicitud para que pueda ser leído nuevamente más adelante
-	r.Body = io.NopCloser(&buf)
-
-	// Decodificar los datos del cliente (puede variar según el formato que esperes)
-	var newUser entities.Users
-	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&newUser); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if existingUser != nil {
+		// Usuario ya existe → devolver 200 con el usuario existente
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(existingUser)
 		return
 	}
 
-	// Llamar al método CreateUser() del servicio para agregar nuevo usuario
+	// Crear usuario porque no existe
 	createdUser, err := c.UserService.CreateUser(newUser)
 	if err != nil {
-		// Manejar el error si lo hubiera, pero no devolver un error HTTP aquí.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Responder al cliente con el usuario recién creado en formato JSON
+	// Devolver 201 con el usuario creado
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdUser)
 }
+
 func (c UserController) CreateGoogleUser(w http.ResponseWriter, r *http.Request) {
-	// Copiar el cuerpo de la solicitud
-	var buf bytes.Buffer
-	tee := io.TeeReader(r.Body, &buf)
-
-	// Imprimir el contenido del cuerpo de la solicitud antes de decodificar
-	body, err := io.ReadAll(tee)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Restaurar el cuerpo de la solicitud para que pueda ser leído nuevamente más adelante
-	r.Body = io.NopCloser(&buf)
-
-	// Decodificar los datos del cliente (puede variar según el formato que esperes)
 	var newUser entities.Users
-	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&newUser); err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Obtener el token de Google de la solicitud (puede estar en los encabezados o en el cuerpo de la solicitud)
-	// googleIDToken := r.Header.Get("Google-ID-Token")
-	// fmt.Printf("Google ID Token: %s\n", googleIDToken)
-	// if googleIDToken == "" {
-	// 	http.Error(w, "Falta el token de Google", http.StatusBadRequest)
-	// 	return
-	// }
+	fmt.Println("DEBUG: email recibido en CreateGoogleUser =", newUser.Email)
 
-	// Llamar al método CreateGoogleUser() del servicio para agregar el nuevo usuario
-	createdUser, err := c.UserService.CreateGoogleUser(r.Context(), newUser)
+	existingUser, err := c.UserService.GetUserByEmail(newUser.Email)
 	if err != nil {
-		// Manejar el error si lo hubiera
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Responder al cliente con el usuario recién creado en formato JSON
+	var userLoged *entities.Users
+
+	if existingUser != nil {
+		fmt.Println("DEBUG: usuario ya existe con email =", existingUser.Email)
+		userLoged = existingUser
+	} else {
+		createdUser, err := c.UserService.CreateGoogleUser(r.Context(), newUser)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println("DEBUG: usuario creado con email =", createdUser.Email)
+		userLoged = createdUser
+	}
+
+	userLoged, err = c.UserService.LoginGoogle(*userLoged)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// Asignar token
+	token, err := c.UserService.AuthService.AssignToken(userLoged.ID, userLoged.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Responder JSON
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdUser)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":  userLoged,
+		"token": token,
+	})
 }
+
 func (c UserController) Login(w http.ResponseWriter, r *http.Request) {
 	// Copiar el cuerpo de la solicitud
 	var buf bytes.Buffer

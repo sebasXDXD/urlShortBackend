@@ -31,7 +31,10 @@ func main() {
 	// Configurar los encabezados CORS usando gorilla/handlers
 	headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
-	origins := handlers.AllowedOrigins([]string{"*"}) // Puedes ajustar esto según tus necesidades
+	origins := handlers.AllowedOrigins([]string{
+		"http://localhost:3000",
+		"https://urlshortfrontend.onrender.com",
+	})
 
 	// Utilizar el middleware para manejar CORS
 	handler := handlers.CORS(headers, methods, origins)(router)

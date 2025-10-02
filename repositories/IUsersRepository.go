@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
 	"urlShortenerBack/entities"
 )
 
@@ -170,5 +171,26 @@ func (tr UserRepository) GetByID(userID int) (*entities.Users, error) {
 		user.UpdatedAt = updatedAtNull.Time
 	}
 
+	return &user, nil
+}
+func (r UserRepository) GetUserByEmail(email string) (*entities.Users, error) {
+	fmt.Println("DEBUG: ejecutando query GetUserByEmail con email =", email)
+
+	var user entities.Users
+	err := r.DB.QueryRow(
+		"SELECT id, username, email, password FROM users WHERE email = $1",
+		email,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+
+	if err == sql.ErrNoRows {
+		fmt.Println("DEBUG: no se encontró usuario con email =", email)
+		return nil, nil
+	}
+	if err != nil {
+		fmt.Println("DEBUG: error en QueryRow:", err)
+		return nil, err
+	}
+
+	fmt.Println("DEBUG: usuario encontrado =", user)
 	return &user, nil
 }
