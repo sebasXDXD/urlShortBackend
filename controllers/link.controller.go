@@ -33,6 +33,27 @@ func (c LinkController) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(links)
 }
+func (c LinkController) GetUserLinks(w http.ResponseWriter, r *http.Request) {
+	// Extraer el token del header (Authorization: Bearer xxx)
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Token no proporcionado", http.StatusUnauthorized)
+		return
+	}
+
+	fmt.Println("DEBUG: Token recibido en GetUserLinks =", authHeader)
+
+	// 🔹 Por ahora usamos el mismo servicio que Index()
+	links, err := c.LinkService.GetLinks()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(links)
+}
+
 func (c *LinkController) GetLink(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	linkID := vars["link"]

@@ -24,6 +24,14 @@ func (ls LinkService) GetLinks() ([]entities.Link, error) {
 	return links, nil
 }
 
+func (ls LinkService) GetLinksByUser(userID int) ([]entities.Link, error) {
+	links, err := ls.LinkRepository.GetLinksByUser(userID)
+	if err != nil {
+		return nil, err
+	}
+	return links, nil
+}
+
 func (ls LinkService) CreateLink(newLink entities.Link) (entities.Link, error) {
 	createdLink, err := ls.LinkRepository.CreateLink(newLink)
 	if err != nil {

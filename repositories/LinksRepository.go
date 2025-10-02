@@ -53,6 +53,39 @@ func (lr LinkRepository) GetLinks() ([]entities.Link, error) {
 
 	return links, nil
 }
+func (lr LinkRepository) GetLinksByUser(userID int) ([]entities.Link, error) {
+	query := `
+		SELECT id, name, redirect_to, user_created_id, created_at, updated_at
+		FROM links
+		WHERE is_deleted = false AND user_created_id = $1
+	`
+
+	rows, err := lr.DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	links := []entities.Link{}
+
+	for rows.Next() {
+		link := entities.Link{}
+		updatedAtNull := sql.NullTime{}
+		createdAtNull := sql.NullTime{}
+		if err := rows.Scan(&link.ID, &link.Name, &link.RedirectTo, &link.UserCreatedID, &createdAtNull, &updatedAtNull); err != nil {
+			return nil, err
+		}
+		link.CreatedAt = createdAtNull.Time
+		link.UpdatedAt = updatedAtNull.Time
+		links = append(links, link)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return links, nil
+}
 
 // CreateLink: usa RETURNING para recuperar id y timestamps (Postgres)
 func (lr LinkRepository) CreateLink(newLink entities.Link) (entities.Link, error) {

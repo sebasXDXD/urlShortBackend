@@ -16,6 +16,7 @@ func setupLinkRoutes(r *mux.Router, linkService linksService.LinkService) {
 	createLinkHandler := http.HandlerFunc(linkController.Create)
 	r.Handle("/link", auth.AuthMiddleware(createLinkHandler)).Methods(http.MethodPost)
 	r.HandleFunc("/links", linkController.Index).Methods(http.MethodGet)
+	r.Handle("/user/links", auth.AuthMiddleware(http.HandlerFunc(linkController.GetUserLinks))).Methods(http.MethodGet)
 	r.HandleFunc("/link/{link}", linkController.GetLink).Methods(http.MethodGet)
 	r.HandleFunc("/{shortCode}", linkController.Redirect).Methods(http.MethodGet)
 	r.Handle("/link/id/{id}", auth.AuthMiddleware(http.HandlerFunc(linkController.GetByID))).Methods(http.MethodGet)
